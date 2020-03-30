@@ -1,0 +1,26 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t ryanlunka/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run ryanlunka/react-test npm test -- --coverage
+
+after_success:
+
+  # Build all the projects.
+  - docker build -t ryanlunka/multi-client ./client
+  - docker build -t ryanlunka/multi-nginx ./nginx
+  - docker build -t ryanlunka/multi-server ./server
+  - docker build -t ryanlunka/multi-worker ./worker
+
+  # Log in to the docker CLI.
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" -- password-stdin
+
+  # Take those images and push them to Docker Hub.
+  - docker push ryanlunka/multi-client
+  - docker push ryanlunka/multi-nginx
+  - docker push ryanlunka/multi-server
+  - docker push ryanlunka/multi-worker
